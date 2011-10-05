@@ -6,7 +6,24 @@
  */
  
 function multivalue_settings_form_alter(&$form, $form_state, $form_id) {
-  //dpm($form);
+  dpm($form_id);
+  dpm($form);
+  // make sure we are on a bundle edit form
+  if (!isset($form['#entity_type'])) return;
+  // get the fields for this bundle
+  $fields = field_info_instances($form['#entity_type'], $form['#bundle']);
+  dpm($fields);
+  // iterate over the fields and check whether they need to be 
+  // manipulated by Multivalue Settings
+  foreach ($fields as $field) {
+    $field_info = field_info_field($field['field_name']);
+    dpm($field_info);
+    if (!isset($field_info['settings']['multivalue_settings'])) continue;
+    else $settings = $field_info['settings']['multivalue_settings'];
+    // field modifications
+    dpm('settings:');
+    dpm($settings);
+  }
 } 
 
  /**
