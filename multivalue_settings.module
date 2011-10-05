@@ -5,13 +5,20 @@
  * 
  */
  
+function multivalue_settings_form_alter(&$form, $form_state, $form_id) {
+  //dpm($form);
+} 
+
  /**
   * Implements hook_form_FORM_ID_alter().
   * Adds the settings to the Field Settings form
   */
 function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_state, $form_id) {
   //dpm($form);
-  $allowed = 100;
+  $allowed_max = 100;
+  $initial_max = 30;
+  $extra_max = 10;
+  $allowed = $allowed_max;
   // check if there is already a number of allowed values in form_state (which
   // means this is running from an AJAX call) or otherwise, if there is a value
   // that has been previously selected in this form
@@ -28,7 +35,7 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
   );
   
   // number of allowed values
-  $options = array(FIELD_CARDINALITY_UNLIMITED => t('Unlimited')) + drupal_map_assoc(range(1, 100));
+  $options = array(FIELD_CARDINALITY_UNLIMITED => t('Unlimited')) + drupal_map_assoc(range(1, $allowed_max));
   $form['field']['settings']['multivalue_settings']['allowed'] = array(
     '#type'       => 'select',
     '#title'      => t('Number of values allowed'),
@@ -37,24 +44,56 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
     '#options'    => $options,
     '#ajax'       => array(
       'callback'  => 'multivalue_settings_required_callback',
-      'wrapper'   => 'multivalue-settings-required-wrapper',
+      'wrapper'   => 'multivalue-settings-wrapper',
     ),
   );
   
   // number of required values
   $options = array('0' => t('None'));
-  if ($allowed > 0) $options += drupal_map_assoc(range(1, $allowed));
+  if ($allowed != -1) $options += drupal_map_assoc(range(1, $allowed));
+  else $options += drupal_map_assoc(range(1, $allowed_max));
   $form['field']['settings']['multivalue_settings']['required'] = array(
     '#type'       => 'select',
     '#title'      => t('Number of values required'),
     '#default_value'  => $form['#field']['settings']['multivalue_settings']['required'],
     '#description'    => t('This is the minimum number of values this field is required to have'),
     '#options'    => $options,
-    '#prefix'     => '<div id="multivalue-settings-required-wrapper">',
-    '#suffix'     => '</div>',
+    '#prefix'     => '<div id="multivalue-settings-wrapper">',
   );
+  
+  // number of values to show initially
+  if ($allowed != -1) $options = drupal_map_assoc(range(1, min($allowed, $initial_max)));
+  else $options = drupal_map_assoc(range(1, $initial_max));
+  $form['field']['settings']['multivalue_settings']['initial'] = array(
+    '#type'       => 'select',
+    '#title'      => t('Number of initial fields'),
+    '#default_value'  => $form['#field']['settings']['multivalue_settings']['initial'],
+    '#description'    => t('This is the number of field instances to show if no values are saved to this field yet'),
+    '#options'    => $options,
+  );
+  
+  // number of extra empty fields to show on edit
+  $options = array('0' => t('None'));
+  if ($allowed != -1) {
+    $options += array('-1' => t('All remaining allowed fields'));
+    $options += drupal_map_assoc(range(1, min($allowed - 1, $extra_max)));
+  }
+  else $options += drupal_map_assoc(range(1, $extra_max));
+  $form['field']['settings']['multivalue_settings']['extra'] = array(
+    '#type'       => 'select',
+    '#title'      => t('Number of extra empty fields'),
+    '#default_value'  => $form['#field']['settings']['multivalue_settings']['extra'],
+    '#description'    => t('This is the maximum number of extra empty field instances to show when the field already has some values'),
+    '#options'    => $options,
+    '#suffix'     => '</div>',
+  ); 
 }
 
 function multivalue_settings_required_callback($form, &$form_state) {
-  return $form['field']['settings']['multivalue_settings']['required'];
+  $return = array('required' => $form['field']['settings']['multivalue_settings']['required'],
+                  'initial' => $form['field']['settings']['multivalue_settings']['initial'],
+                  'extra' => $form['field']['settings']['multivalue_settings']['extra'],
+            );
+  //dpm($return);
+  return $return;
 }
