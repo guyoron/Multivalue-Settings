@@ -4,3 +4,57 @@
  * @file
  * 
  */
+ 
+ /**
+  * Implements hook_form_FORM_ID_alter().
+  * Adds the settings to the Field Settings form
+  */
+function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_state, $form_id) {
+  //dpm($form);
+  $allowed = 100;
+  // check if there is already a number of allowed values in form_state (which
+  // means this is running from an AJAX call) or otherwise, if there is a value
+  // that has been previously selected in this form
+  if (!empty($form_state['values']['field']['settings']['multivalue_settings']['allowed'])) {
+    $allowed = $form_state['values']['field']['settings']['multivalue_settings']['allowed'];
+  }
+  elseif (!empty($form['#field']['settings']['multivalue_settings']['allowed'])) {
+    $allowed = $form['#field']['settings']['multivalue_settings']['allowed'];
+  }
+  // the fieldset
+  $form['field']['settings']['multivalue_settings'] = array(
+    '#type'   => 'fieldset',
+    '#title'  => 'Multivalue Settings',
+  );
+  
+  // number of allowed values
+  $options = array(FIELD_CARDINALITY_UNLIMITED => t('Unlimited')) + drupal_map_assoc(range(1, 100));
+  $form['field']['settings']['multivalue_settings']['allowed'] = array(
+    '#type'       => 'select',
+    '#title'      => t('Number of values allowed'),
+    '#default_value'  => $form['#field']['settings']['multivalue_settings']['allowed'],
+    '#description'    => t('This is the maximum number of values this field may have'),
+    '#options'    => $options,
+    '#ajax'       => array(
+      'callback'  => 'multivalue_settings_required_callback',
+      'wrapper'   => 'multivalue-settings-required-wrapper',
+    ),
+  );
+  
+  // number of required values
+  $options = array('0' => t('None'));
+  if ($allowed > 0) $options += drupal_map_assoc(range(1, $allowed));
+  $form['field']['settings']['multivalue_settings']['required'] = array(
+    '#type'       => 'select',
+    '#title'      => t('Number of values required'),
+    '#default_value'  => $form['#field']['settings']['multivalue_settings']['required'],
+    '#description'    => t('This is the minimum number of values this field is required to have'),
+    '#options'    => $options,
+    '#prefix'     => '<div id="multivalue-settings-required-wrapper">',
+    '#suffix'     => '</div>',
+  );
+}
+
+function multivalue_settings_required_callback($form, &$form_state) {
+  return $form['field']['settings']['multivalue_settings']['required'];
+}
