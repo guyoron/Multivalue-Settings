@@ -1,0 +1,8 @@
+name = Multivalue Settings
+description = Adds some useful settings for Mmltiple value fields
+core = 7.x
+
+files[] = multivalue_settings.module
+files[] = multivalue_settings.install
+
+
