@@ -16,23 +16,19 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
   dpm('form_state');
   dpm($form_state);
   
-  // get the fields for this bundle
-  $fields = field_info_instances($form['#entity_type'], $form['#bundle']);
+  // get the fields on this form
+  $fields = $form_state['field'];
   dpm('fields:');
   dpm($fields);
   
   // iterate over the fields
-  foreach ($fields as $field) {
-    $field_name = $field['field_name'];
-    $field_info = field_info_field($field_name);
-    dpm('field_info:');
-    dpm($field_info);
+  foreach ($fields as $field_name => $field) {
     // check whether they need to be altered by Multivalue Settings
-    if (!isset($field_info['settings']['multivalue_settings']) ||
-        $field_info['settings']['multivalue_settings']['enable'] == 0) {
+    if (!isset($field[$langcode]['field']['settings']['multivalue_settings']) ||
+        $field[$langcode]['field']['settings']['multivalue_settings']['enable'] == 0) {
           continue;
     }
-    else $settings = $field_info['settings']['multivalue_settings'];
+    else $settings = $field[$langcode]['field']['settings']['multivalue_settings'];
     // field modifications
     dpm('settings:');
     dpm($settings);
