@@ -5,6 +5,10 @@
  * 
  */
 
+/**
+ * 
+ * 
+ */
 function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
   dpm('in field_attach_form');
   dpm('entity_type');
@@ -53,6 +57,36 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
 
     $element_num = $element['#max_delta'] + 1;
     dpm("element has $element_num fields");
+        
+    // if there are no values in the field, we want to show $initial fields
+    if ($value_num == 0) {
+      if ($element_num != $initial) {
+        $sample_field = $element[0];
+        foreach (range(0, max($element_num - 1, $initial - 1)) as $i) {
+          if ($i < $initial) {
+            $element[strval($i)] = $sample_field;
+            $element[strval($i)]['#delta'] = $i;
+            $element[strval($i)]['value']['#delta'] = $i;
+            $element[strval($i)]['#weight'] = $i;
+            $element[strval($i)]['value']['#weight'] = $i;
+            $element[strval($i)]['_weight']['#delta'] = $i;
+            $element[strval($i)]['_weight']['#default_value'] = $i;
+            $element['#max_delta'] = $i;
+            $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $i . '">';
+            $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i;
+            $form_state['field'][$field_name][$langcode]['items_count'] = $i;
+          }
+          else unset($element[$i]);
+        }
+        dpm('element');
+        dpm($element);
+      }
+    }
+    // remove add more button if necessary
+    if ($element_num == $allowed) {
+      unset($element['add_more']);
+    }
+    //dd($form[$field_name]);
   }
 }
 
@@ -61,15 +95,14 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
   * Adds the settings to the Field Settings form
   */
 function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_state, $form_id) {
-  //dpm($form);
-  // change the regular multiple values form element
+  // change the regular multiple values form element to an internal value
   unset($form['field']['cardinality']);
   $form['field']['cardinality'] = array(
     '#type'   => 'value',
     '#value'  => NULL,
   );
   
-  // add a submit handler for this form
+  // add a validate handler for this form
   $form['#validate'][] = 'multivalue_settings_validate_settings';
   
   // create the new settings form elements
@@ -77,9 +110,9 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
   $initial_max = 30;
   $extra_max = 10;
   $allowed = $allowed_max;
-  // check if there is already a number of allowed values in form_state (which
-  // means this is running from an AJAX call) or otherwise, if there is a value
-  // that has been previously selected in this form
+  /* check if there is already a number of allowed values in form_state (which
+   * means this is running from an AJAX call) or otherwise, if there is a value
+   * that has been previously selected in this form */
   if (!empty($form_state['values']['field']['settings']['multivalue_settings']['allowed'])) {
     $allowed = $form_state['values']['field']['settings']['multivalue_settings']['allowed'];
   }
@@ -178,6 +211,10 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
   ); 
 }
 
+/**
+ * 
+ * 
+ */
 function multivalue_settings_required_callback($form, &$form_state) {
   $return = array('required' => $form['field']['settings']['multivalue_settings']['required'],
                   'initial' => $form['field']['settings']['multivalue_settings']['initial'],
@@ -187,16 +224,21 @@ function multivalue_settings_required_callback($form, &$form_state) {
   return $return;
 }
 
+/**
+ * 
+ * 
+ */
 function multivalue_settings_validate_settings($form, &$form_state) {
-  dpm('in submit function for settings');
-  dpm($form_state['input']);
-  dpm($form_state['values']);
+  //dpm('in submit function for settings');
+  //dpm($form_state['input']);
+  //dpm($form_state['values']);
   // fix cardinality
   $settings = $form_state['values']['field']['settings']['multivalue_settings'];
   if ($settings['enable'] == 0) {
     $form_state['values']['field']['cardinality'] = 1;
   }
   else {
-    $form_state['values']['field']['cardinality'] = $settings['allowed'];
+    // set cardinality always to 'Unlimited' so that we get the add more button
+    $form_state['values']['field']['cardinality'] = FIELD_CARDINALITY_UNLIMITED;
   }
 }
