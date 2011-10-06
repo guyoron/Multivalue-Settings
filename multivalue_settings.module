@@ -38,17 +38,29 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
     $initial = $settings['initial'];
     $extra = $settings['extra'];
     // find the number of values the field already has
-    if (isset($entity->$field_name) && !empty($entity->$field_name)) {
-      dpm('field has values');
+    $value_num = $form_state['field'][$field_name][$langcode]['items_count'];
+    if ($value_num > 0) {
       $values = $entity->$field_name;
       $values = $values[$langcode];
-      dpm($values);
-      $value_num = count($values);
-      dpm("field has $value_num values");
     }
-    else $value_num = 0;
+    dpm("field has $value_num values");
     // set it up accordingly
-    
+    //$form_state['field'][$field_name][$langcode]['instance']['required'] = 1;
+    $element = &$form[$field_name][$langcode];
+    if ($allowed == 1) {
+      dpm('allowed is 1');
+      dpm("required is $required");
+      //$form[$field_name][$langcode]['#required'] = 1;
+      //$form[$field_name][$langcode][0]['#required'] = TRUE;
+      $form[$field_name][$langcode][0]['value']['#required'] = $required;
+    } else {
+      
+    }
+    dpm('form');
+    dpm($form);
+    dpm('form_state');
+    dpm($form_state);
+    //$element_num = count($element)
   }
 }
 
@@ -62,36 +74,11 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
   dpm($context);
 } */
  
-/*function multivalue_settings_form_alter(&$form, $form_state, $form_id) {
+function multivalue_settings_form_alter(&$form, $form_state, $form_id) {
   dpm($form_id);
   dpm('form:');
   dpm($form);
-  // make sure we are on a bundle edit form
-  if (!isset($form['#entity_type'])) return;
-  // get the fields for this bundle
-  $fields = field_info_instances($form['#entity_type'], $form['#bundle']);
-  dpm('fields:');
-  dpm($fields);
-  // iterate over the fields and check whether they need to be 
-  // manipulated by Multivalue Settings
-  foreach ($fields as $field) {
-    $field_info = field_info_field($field['field_name']);
-    dpm('field_onfo:');
-    dpm($field_info);
-    if (!isset($field_info['settings']['multivalue_settings'])) continue;
-    else $settings = $field_info['settings']['multivalue_settings'];
-    // field modifications
-    dpm('settings:');
-    dpm($settings);
-    $allowed = $settings['allowed'];
-    $required = $settings['required'];
-    $initial = $settings['initial'];
-    $extra = $settings['extra'];
-    // find the number of values the field already has
-    
-    // set it up accordingly
-  }
-} */
+} 
 
  /**
   * Implements hook_form_FORM_ID_alter().
