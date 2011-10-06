@@ -28,7 +28,10 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
     dpm('field_info:');
     dpm($field_info);
     // check whether they need to be altered by Multivalue Settings
-    if (!isset($field_info['settings']['multivalue_settings'])) continue;
+    if (!isset($field_info['settings']['multivalue_settings']) ||
+        $field_info['settings']['multivalue_settings']['enable'] == 0) {
+          continue;
+    }
     else $settings = $field_info['settings']['multivalue_settings'];
     // field modifications
     dpm('settings:');
@@ -47,20 +50,13 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
     // set it up accordingly
     //$form_state['field'][$field_name][$langcode]['instance']['required'] = 1;
     $element = &$form[$field_name][$langcode];
-    if ($allowed == 1) {
-      dpm('allowed is 1');
-      dpm("required is $required");
-      //$form[$field_name][$langcode]['#required'] = 1;
-      //$form[$field_name][$langcode][0]['#required'] = TRUE;
-      $form[$field_name][$langcode][0]['value']['#required'] = $required;
-    } else {
-      
-    }
-    dpm('form');
-    dpm($form);
-    dpm('form_state');
-    dpm($form_state);
-    //$element_num = count($element)
+      //$form[$field_name][$langcode][0]['value']['#required'] = $required;
+
+    dpm('element');
+    dpm($element);
+
+    $element_num = $element['#max_delta'] + 1;
+    dpm("element has $element_num fields");
   }
 }
 
@@ -74,11 +70,11 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
   dpm($context);
 } */
  
-function multivalue_settings_form_alter(&$form, $form_state, $form_id) {
+/*function multivalue_settings_form_alter(&$form, $form_state, $form_id) {
   dpm($form_id);
   dpm('form:');
   dpm($form);
-} 
+} */
 
  /**
   * Implements hook_form_FORM_ID_alter().
@@ -110,23 +106,39 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
   elseif (!empty($form['#field']['settings']['multivalue_settings']['allowed'])) {
     $allowed = $form['#field']['settings']['multivalue_settings']['allowed'];
   }
+  
+  // get default values
+  $values = $form['#field']['settings']['multivalue_settings'];
+  
   // the fieldset
   $form['field']['settings']['multivalue_settings'] = array(
     '#type'   => 'fieldset',
     '#title'  => 'Multivalue Settings',
   );
   
+  // the checkbox to enable these settings and show the field
+  $form['field']['settings']['multivalue_settings']['enable'] = array(
+    '#type'   => 'checkbox',
+    '#title'  => t('This field can contain more than one value'),
+    '#default_value'  => $values['enable'],
+  );
+  
   // number of allowed values
-  $options = array(FIELD_CARDINALITY_UNLIMITED => t('Unlimited')) + drupal_map_assoc(range(1, $allowed_max));
+  $options = array(FIELD_CARDINALITY_UNLIMITED => t('Unlimited')) + drupal_map_assoc(range(2, $allowed_max));
   $form['field']['settings']['multivalue_settings']['allowed'] = array(
     '#type'       => 'select',
     '#title'      => t('Number of values allowed'),
-    '#default_value'  => $form['#field']['settings']['multivalue_settings']['allowed'],
+    '#default_value'  => $values['allowed'],
     '#description'    => t('This is the maximum number of values this field may have'),
     '#options'    => $options,
     '#ajax'       => array(
       'callback'  => 'multivalue_settings_required_callback',
       'wrapper'   => 'multivalue-settings-wrapper',
+    ),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="field[settings][multivalue_settings][enable]"]' => array('checked' => TRUE),
+      ),
     ),
   );
   
@@ -137,10 +149,15 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
   $form['field']['settings']['multivalue_settings']['required'] = array(
     '#type'       => 'select',
     '#title'      => t('Number of values required'),
-    '#default_value'  => $form['#field']['settings']['multivalue_settings']['required'],
+    '#default_value'  => $values['required'],
     '#description'    => t('This is the minimum number of values this field is required to have'),
     '#options'    => $options,
     '#prefix'     => '<div id="multivalue-settings-wrapper">',
+    '#states' => array(
+      'visible' => array(
+        ':input[name="field[settings][multivalue_settings][enable]"]' => array('checked' => TRUE),
+      ),
+    ),
   );
   
   // number of values to show initially
@@ -149,25 +166,35 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
   $form['field']['settings']['multivalue_settings']['initial'] = array(
     '#type'       => 'select',
     '#title'      => t('Number of initial fields'),
-    '#default_value'  => $form['#field']['settings']['multivalue_settings']['initial'],
+    '#default_value'  => $values['initial'],
     '#description'    => t('This is the number of field instances to show if no values are saved to this field yet'),
     '#options'    => $options,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="field[settings][multivalue_settings][enable]"]' => array('checked' => TRUE),
+      ),
+    ),
   );
   
   // number of extra empty fields to show on edit
   $options = array('0' => t('None'));
   if ($allowed != -1) {
-    $options += array('-1' => t('All remaining allowed fields'));
+    $options += array('-1' => t('Show full number of allowed fields'));
     $options += drupal_map_assoc(range(1, min($allowed - 1, $extra_max)));
   }
   else $options += drupal_map_assoc(range(1, $extra_max));
   $form['field']['settings']['multivalue_settings']['extra'] = array(
     '#type'       => 'select',
     '#title'      => t('Number of extra empty fields'),
-    '#default_value'  => $form['#field']['settings']['multivalue_settings']['extra'],
+    '#default_value'  => $values['extra'],
     '#description'    => t('This is the maximum number of extra empty field instances to show when the field already has some values'),
     '#options'    => $options,
     '#suffix'     => '</div>',
+    '#states' => array(
+      'visible' => array(
+        ':input[name="field[settings][multivalue_settings][enable]"]' => array('checked' => TRUE),
+      ),
+    ),
   ); 
 }
 
