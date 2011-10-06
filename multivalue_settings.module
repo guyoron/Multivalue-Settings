@@ -56,22 +56,6 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
   }
 }
 
-/*function multivalue_settings_field_widget_form_alter(&$element, &$form_state, $context) {
-  dpm('in widget alter');
-  dpm($context);
-  // check if this field needs to be altered
-  if (!isset($context['field']['settings']['multivalue_settings'])) return;
-  dpm('this field needs to be altered');
-  dpm($element);
-  dpm($context);
-} */
- 
-/*function multivalue_settings_form_alter(&$form, $form_state, $form_id) {
-  dpm($form_id);
-  dpm('form:');
-  dpm($form);
-} */
-
  /**
   * Implements hook_form_FORM_ID_alter().
   * Adds the settings to the Field Settings form
@@ -209,7 +193,10 @@ function multivalue_settings_validate_settings($form, &$form_state) {
   dpm($form_state['values']);
   // fix cardinality
   $settings = $form_state['values']['field']['settings']['multivalue_settings'];
-  if ($settings['allowed'] == 1) {
-    $form_state['values']['field']['cardinality'] = max($settings['required'], $settings['allowed']);
-  } else $form_state['values']['field']['cardinality'] = FIELD_CARDINALITY_UNLIMITED;
+  if ($settings['enable'] == 0) {
+    $form_state['values']['field']['cardinality'] = 1;
+  }
+  else {
+    $form_state['values']['field']['cardinality'] = $settings['allowed'];
+  }
 }
