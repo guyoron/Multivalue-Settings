@@ -10,15 +10,15 @@
  * 
  */
 function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
-  //dpm('in field_attach_form');
+  dpm('in field_attach_form');
   //dpm('entity_type');
   //dpm($entity_type);
-  //dpm('entity');
-  //dpm($entity);
-  //dpm('form');
-  //dpm($form);
-  //dpm('form_state');
-  //dpm($form_state);
+  dpm('entity');
+  dpm($entity);
+  dpm('form');
+  dpm($form);
+  dpm('form_state');
+  dpm($form_state);
   
   // chceck if we are in an ajax callback
   if (isset($form_state['triggering_element'])) {
@@ -45,65 +45,50 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
     $required = $settings['required'];
     $initial = $settings['initial'];
     $extra = $settings['extra'];
-    // find the number of values the field already has
-    $value_num = $form_state['field'][$field_name][$langcode]['items_count'];
-    if ($value_num > 0) {
-      $values = $entity->$field_name;
-      $values = $values[$langcode];
-    }
-    //dpm("field has $value_num values");
+
     // set it up accordingly
-    //$form_state['field'][$field_name][$langcode]['instance']['required'] = 1;
     $element = &$form[$field_name][$langcode];
-      //$form[$field_name][$langcode][0]['value']['#required'] = $required;
 
-    //dpm('element');
-    //dpm($element);
-
+    dpm('element');
+    dpm($element);
+    /*
+    unset($element[0]);
+    unset($element[1]);
+    unset($element[2]);
+    dd($element);*/
+    
     $element_num = $element['#max_delta'] + 1;
     //dpm("element has $element_num fields");
     
-    $extra_num = $element_num - $value_num;
-    
-    if ($extra == -1) {
-      $extra = $allowed - $value_num;
-    }
     
     if (!$ajax) {
+      // find the number of values the field already has
+      $value_num = $form_state['field'][$field_name][$langcode]['items_count'];
+      // get the actual values
+      if ($value_num > 0) {
+        $values = $entity->$field_name;
+        $values = $values[$langcode];
+      }
+      // find the number of extra empty fields we have
+      $extra_num = $element_num - $value_num;
+      // find the number of extra fields we want to have
+      if ($extra == -1) {
+        $extra = $allowed - $value_num;
+      }
       // if there are no values in the field, we want to show $initial fields
       if ($value_num == 0) {
-        if ($element_num != $initial) {
-          $sample_field = $element[0];
-          foreach (range(0, max($element_num - 1, $initial - 1)) as $i) {
-            if ($i < $initial) {
-              $element[$i] = multivalue_settings_increment_element($sample_field, $i);
-              $element['#max_delta'] = $i;
-              $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $i . '">';
-              $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i;
-              // update the item count. Necessary for add_more ajax to work
-              $form_state['field'][$field_name][$langcode]['items_count'] = $i;
-            }
-            else unset($element[$i]);
-          }
+        // really $element_num in this case will always be 1
+        if ($element_num < $initial) {
+          $add = $initial - $element_num;
+          multivalue_settings_add_items($element, $add, $field_name, $langcode, $form_state);
         }
       }
       elseif ($element_num > $allowed) {
-        $diff_num = $allowed - $element_num;
-        if ($diff_num > $extra_num) {
-          drupal_set_message('oops! something is wrong!', 'warning');
-          return;
-        }
-        else {
-          $max_delta = $element['#max_delta'];
-          foreach (range($max_delta, $max_delta - $diff_num + 1) as $delta) {
-            unset($element[$delta]);
-            $i = $delta - 1;
-            $element['#max_delta'] = $i;
-            $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $i . '">';
-            $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i ;
-            $form_state['field'][$field_name][$langcode]['items_count'] = $i;
-          }
-        }
+        dpm('hi');
+        $remove = $element_num - $allowed;
+        dpm('remove');
+        dpm($remove);
+        multivalue_settings_remove_items($element, $remove, $field_name, $langcode, $form_state);
       } 
       elseif ($extra_num != $extra) {
         if ($extra_num > $extra) {
@@ -138,6 +123,49 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
       unset($element['add_more']);
     }
   }
+}
+
+function multivalue_settings_remove_items(&$element, $remove, $field_name, $langcode, &$form_state) {
+  foreach (range(1, $remove) as $i) {
+    multivalue_settings_remove_item($element, $field_name, $langcode, $form_state);
+  }
+}
+
+function multivalue_settings_remove_item(&$element, $field_name, $langcode, &$form_state) {
+  $max_delta = $element['#max_delta'];
+  unset($element[$max_delta]);
+  $delta  = $max_delta - 1;
+  $element['#max_delta'] = $delta;
+  $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $delta . '">';
+  $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $delta ;
+  $form_state['field'][$field_name][$langcode]['items_count'] = $delta;
+}
+
+function multivalue_settings_add_items(&$element, $add, $field_name, $langcode, &$form_state) {
+  foreach (range(1, $add) as $i) {
+    multivalue_settings_add_item($element, $field_name, $langcode, $form_state);
+  }
+}
+
+function multivalue_settings_add_item(&$element, $field_name, $langcode, &$form_state) {
+  $old_delta = $element['#max_delta'];
+  $delta = $old_delta + 1; 
+  // initialize new item
+  $element[$delta] = $element[$old_delta];
+  // incremenet item settings
+  $element[$delta]['#delta'] = $delta;
+  $element[$delta]['value']['#delta'] = $delta;
+  $element[$delta]['#weight'] = $delta;
+  $element[$delta]['value']['#weight'] = $delta;
+  $element[$delta]['_weight']['#delta'] = $delta;
+  $element[$delta]['_weight']['#default_value'] = $delta;
+  // incremenet element settings
+  $element['#max_delta'] = $delta;
+  //$element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $i . '">';
+  //$element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i;
+  // update the item count. Necessary for add_more ajax to work
+  $form_state['field'][$field_name][$langcode]['items_count'] = $delta;
+  
 }
 
 function multivalue_settings_increment_element($element, $delta) {
