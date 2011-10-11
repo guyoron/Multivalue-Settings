@@ -6,24 +6,29 @@
  */
 
 /**
- * 
+ * Implements field_attach_form().
  * 
  */
 function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
-  dpm('in field_attach_form');
-  dpm('entity_type');
-  dpm($entity_type);
-  dpm('entity');
-  dpm($entity);
-  dpm('form');
-  dpm($form);
-  dpm('form_state');
-  dpm($form_state);
+  //dpm('in field_attach_form');
+  //dpm('entity_type');
+  //dpm($entity_type);
+  //dpm('entity');
+  //dpm($entity);
+  //dpm('form');
+  //dpm($form);
+  //dpm('form_state');
+  //dpm($form_state);
+  
+  // chceck if we are in an ajax callback
+  if (isset($form_state['triggering_element'])) {
+    $ajax = TRUE;
+  } else $ajax = FALSE;
   
   // get the fields on this form
   $fields = $form_state['field'];
-  dpm('fields:');
-  dpm($fields);
+  //dpm('fields:');
+  //dpm($fields);
   
   // iterate over the fields
   foreach ($fields as $field_name => $field) {
@@ -34,8 +39,8 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
     }
     else $settings = $field[$langcode]['field']['settings']['multivalue_settings'];
     // field modifications
-    dpm('settings:');
-    dpm($settings);
+    //dpm('settings:');
+    //dpm($settings);
     $allowed = $settings['allowed'];
     $required = $settings['required'];
     $initial = $settings['initial'];
@@ -46,48 +51,103 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
       $values = $entity->$field_name;
       $values = $values[$langcode];
     }
-    dpm("field has $value_num values");
+    //dpm("field has $value_num values");
     // set it up accordingly
     //$form_state['field'][$field_name][$langcode]['instance']['required'] = 1;
     $element = &$form[$field_name][$langcode];
       //$form[$field_name][$langcode][0]['value']['#required'] = $required;
 
-    dpm('element');
-    dpm($element);
+    //dpm('element');
+    //dpm($element);
 
     $element_num = $element['#max_delta'] + 1;
-    dpm("element has $element_num fields");
-        
-    // if there are no values in the field, we want to show $initial fields
-    if ($value_num == 0) {
-      if ($element_num != $initial) {
-        $sample_field = $element[0];
-        foreach (range(0, max($element_num - 1, $initial - 1)) as $i) {
-          if ($i < $initial) {
-            $element[strval($i)] = $sample_field;
-            $element[strval($i)]['#delta'] = $i;
-            $element[strval($i)]['value']['#delta'] = $i;
-            $element[strval($i)]['#weight'] = $i;
-            $element[strval($i)]['value']['#weight'] = $i;
-            $element[strval($i)]['_weight']['#delta'] = $i;
-            $element[strval($i)]['_weight']['#default_value'] = $i;
+    //dpm("element has $element_num fields");
+    
+    $extra_num = $element_num - $value_num;
+    
+    if ($extra == -1) {
+      $extra = $allowed - $value_num;
+    }
+    
+    if (!$ajax) {
+      // if there are no values in the field, we want to show $initial fields
+      if ($value_num == 0) {
+        if ($element_num != $initial) {
+          $sample_field = $element[0];
+          foreach (range(0, max($element_num - 1, $initial - 1)) as $i) {
+            if ($i < $initial) {
+              $element[$i] = multivalue_settings_increment_element($sample_field, $i);
+              $element['#max_delta'] = $i;
+              $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $i . '">';
+              $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i;
+              // update the item count. Necessary for add_more ajax to work
+              $form_state['field'][$field_name][$langcode]['items_count'] = $i;
+            }
+            else unset($element[$i]);
+          }
+        }
+      }
+      elseif ($element_num > $allowed) {
+        $diff_num = $allowed - $element_num;
+        if ($diff_num > $extra_num) {
+          drupal_set_message('oops! something is wrong!', 'warning');
+          return;
+        }
+        else {
+          $max_delta = $element['#max_delta'];
+          foreach (range($max_delta, $max_delta - $diff_num + 1) as $delta) {
+            unset($element[$delta]);
+            $i = $delta - 1;
             $element['#max_delta'] = $i;
             $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $i . '">';
-            $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i;
+            $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i ;
             $form_state['field'][$field_name][$langcode]['items_count'] = $i;
           }
-          else unset($element[$i]);
         }
-        dpm('element');
-        dpm($element);
+      } 
+      elseif ($extra_num != $extra) {
+        if ($extra_num > $extra) {
+          $diff = $extra_num - $extra;
+          $max_delta = $element['#max_delta'];
+          foreach (range($max_delta, $max_delta - $diff + 1) as $delta) {
+            unset($element[$delta]);
+            $i = $delta - 1;
+            $element['#max_delta'] = $i;
+            $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $i . '">';
+            $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i ;
+            $form_state['field'][$field_name][$langcode]['items_count'] = $i;
+          }
+        }
+        if ($extra > $extra_num) {
+          $diff = $extra - $extra_num;
+          $max_delta = $element['#max_delta'];
+          $sample_field = $element[$max_delta];
+          foreach (range($max_delta + 1, $max_delta + $diff - 1) as $delta) {
+            $element[$delta] = multivalue_settings_increment_element($sample_field, $delta);
+            $element['#max_delta'] = $delta;
+            $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $delta . '">';
+            $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $delta;
+            // update the item count. Necessary for add_more ajax to work
+            $form_state['field'][$field_name][$langcode]['items_count'] = $delta + 1;
+          }
+        }
       }
-    }
+    } // end if ($ajax)
     // remove add more button if necessary
-    if ($element_num == $allowed) {
+    if ($element_num >= $allowed) {
       unset($element['add_more']);
     }
-    //dd($form[$field_name]);
   }
+}
+
+function multivalue_settings_increment_element($element, $delta) {
+  $element['#delta'] = $delta;
+  $element['value']['#delta'] = $delta;
+  $element['#weight'] = $delta;
+  $element['value']['#weight'] = $delta;
+  $element['_weight']['#delta'] = $delta;
+  $element['_weight']['#default_value'] = $delta;
+  return $element;
 }
 
  /**
