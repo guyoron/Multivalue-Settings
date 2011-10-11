@@ -25,8 +25,9 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
     $ajax = TRUE;
   } else $ajax = FALSE;
   
-  // get the fields on this form
-  $fields = $form_state['field'];
+  // get the fields on this form, or return if there are none
+  if (isset($form_state['field'])) $fields = $form_state['field'];
+  else return;
   //dpm('fields:');
   //dpm($fields);
   
