@@ -84,6 +84,7 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
         }
       }
       elseif ($element_num > $allowed) {
+        // we have to remove unallowed fields
         dpm('hi');
         $remove = $element_num - $allowed;
         dpm('remove');
@@ -92,33 +93,19 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
       } 
       elseif ($extra_num != $extra) {
         if ($extra_num > $extra) {
-          $diff = $extra_num - $extra;
-          $max_delta = $element['#max_delta'];
-          foreach (range($max_delta, $max_delta - $diff + 1) as $delta) {
-            unset($element[$delta]);
-            $i = $delta - 1;
-            $element['#max_delta'] = $i;
-            $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $i . '">';
-            $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i ;
-            $form_state['field'][$field_name][$langcode]['items_count'] = $i;
-          }
+          // we have to remove unwanted extra fields
+          $remove = $extra_num - $extra;
+          multivalue_settings_remove_items($element, $remove, $field_name, $langcode, $form_state);
         }
         if ($extra > $extra_num) {
-          $diff = $extra - $extra_num;
-          $max_delta = $element['#max_delta'];
-          $sample_field = $element[$max_delta];
-          foreach (range($max_delta + 1, $max_delta + $diff - 1) as $delta) {
-            $element[$delta] = multivalue_settings_increment_element($sample_field, $delta);
-            $element['#max_delta'] = $delta;
-            $element['#prefix'] = '<div id="field-test-add-more-wrapper' . '--' . $delta . '">';
-            $element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $delta;
-            // update the item count. Necessary for add_more ajax to work
-            $form_state['field'][$field_name][$langcode]['items_count'] = $delta + 1;
-          }
+          // we have to add extra fields
+          $add = $extra - $extra_num;
+          multivalue_settings_add_items($element, $add, $field_name, $langcode, $form_state);
         }
       }
     } // end if ($ajax)
     // remove add more button if necessary
+    $element_num = $element['#max_delta'] + 1;
     if ($element_num >= $allowed) {
       unset($element['add_more']);
     }
