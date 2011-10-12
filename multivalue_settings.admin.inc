@@ -4,7 +4,7 @@
  * @file
  * Contains the settings administration forms for this module
  */
- 
+
 /**
  * Implements hook_form_FORM_ID_alter().
  * Adds the settings to the Field Settings form
@@ -123,7 +123,7 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
         ':input[name="field[settings][multivalue_settings][enable]"]' => array('checked' => TRUE),
       ),
     ),
-  ); 
+  );
 }
 
 /**

@@ -10,16 +10,17 @@ require_once('multivalue_settings.admin.inc');
 /**
  * Implements field_attach_form().
  */
-function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {  
+function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
   // get the fields on this form, or return if there are none
   if (isset($form_state['field'])) $fields = $form_state['field'];
   else return;
-  
+
   // chceck if we are in an ajax callback
   if (isset($form_state['triggering_element'])) {
     $ajax = TRUE;
-  } else $ajax = FALSE;
-    
+  }
+  else $ajax = FALSE;
+
   // iterate over the fields
   foreach ($fields as $field_name => $field) {
     // check whether they need to be altered by Multivalue Settings
@@ -28,19 +29,19 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
           continue;
     }
     else $settings = $field[$langcode]['field']['settings']['multivalue_settings'];
-    
+
     $allowed = $settings['allowed'];
     $required = $settings['required'];
     $initial = $settings['initial'];
     $extra = $settings['extra'];
 
     $element = &$form[$field_name][$langcode];
-    
+
     // add a validation function to this element
     $form[$field_name][$langcode]['#element_validate'][] = 'multivalue_settings_validate_element';
-    
-    $element_num = $element['#max_delta'] + 1;    
-    
+
+    $element_num = $element['#max_delta'] + 1;
+
     if (!$ajax) {
       // find the number of values the field already has
       $value_num = $form_state['field'][$field_name][$langcode]['items_count'];
@@ -67,7 +68,7 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
         // we have to remove unallowed fields
         $remove = $element_num - $allowed;
         multivalue_settings_remove_items($element, $remove, $field_name, $langcode, $form_state);
-      } 
+      }
       elseif ($extra_num != $extra) {
         if ($extra_num > $extra) {
           // we have to remove unwanted extra fields
@@ -162,7 +163,7 @@ function multivalue_settings_add_items(&$element, $add, $field_name, $langcode, 
  */
 function multivalue_settings_add_item(&$element, $field_name, $langcode, &$form_state) {
   $old_delta = $element['#max_delta'];
-  $delta = $old_delta + 1; 
+  $delta = $old_delta + 1;
   // initialize new item
   $element[$delta] = $element[$old_delta];
   // incremenet item settings
