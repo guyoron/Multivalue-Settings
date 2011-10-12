@@ -2,14 +2,13 @@
 
 /**
  * @file
- * 
+ * Main module file for Multivalue Settings
  */
 
 require_once('multivalue_settings.admin.inc');
 
 /**
  * Implements field_attach_form().
- * 
  */
 function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {  
   // get the fields on this form, or return if there are none
@@ -93,11 +92,17 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
   }
 }
 
+/**
+ * This marks the field required
+ */
 function multivalue_settings_mark_required($element) {
   $element['#required'] = TRUE;
   return $element;
 }
 
+/**
+ * Validate handler to handle 'required' settings
+ */
 function multivalue_settings_validate_element($element, &$form_state, $form) {
   // get language and field name
   $langcode = $form_state['values']['language'];
@@ -121,12 +126,18 @@ function multivalue_settings_validate_element($element, &$form_state, $form) {
   }
 }
 
+/**
+ * Helper function - removes items from the given element
+ */
 function multivalue_settings_remove_items(&$element, $remove, $field_name, $langcode, &$form_state) {
   foreach (range(1, $remove) as $i) {
     multivalue_settings_remove_item($element, $field_name, $langcode, $form_state);
   }
 }
 
+/**
+ * Helper function - removes one item from the given element
+ */
 function multivalue_settings_remove_item(&$element, $field_name, $langcode, &$form_state) {
   $max_delta = $element['#max_delta'];
   unset($element[$max_delta]);
@@ -137,12 +148,18 @@ function multivalue_settings_remove_item(&$element, $field_name, $langcode, &$fo
   $form_state['field'][$field_name][$langcode]['items_count'] = $delta;
 }
 
+/**
+ * Helper function - adds items to the given element
+ */
 function multivalue_settings_add_items(&$element, $add, $field_name, $langcode, &$form_state) {
   foreach (range(1, $add) as $i) {
     multivalue_settings_add_item($element, $field_name, $langcode, $form_state);
   }
 }
 
+/**
+ * Helper function - adds one item to the given element
+ */
 function multivalue_settings_add_item(&$element, $field_name, $langcode, &$form_state) {
   $old_delta = $element['#max_delta'];
   $delta = $old_delta + 1; 
@@ -161,6 +178,5 @@ function multivalue_settings_add_item(&$element, $field_name, $langcode, &$form_
   //$element['add_more']['#ajax']['wrapper'] = 'field-test-add-more-wrapper' . '--' . $i;
   // update the item count. Necessary for add_more ajax to work
   $form_state['field'][$field_name][$langcode]['items_count'] = $delta;
-  
 }
 

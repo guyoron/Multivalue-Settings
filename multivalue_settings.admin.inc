@@ -2,7 +2,7 @@
 
 /**
  * @file
- * 
+ * Contains the settings administration forms for this module
  */
  
 /**
@@ -127,9 +127,8 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
 }
 
 /**
-* 
-* 
-*/
+ * Ajax callback for the admin form
+ */
 function multivalue_settings_required_callback($form, &$form_state) {
   $return = array('required' => $form['field']['settings']['multivalue_settings']['required'],
                   'initial' => $form['field']['settings']['multivalue_settings']['initial'],
@@ -139,12 +138,9 @@ function multivalue_settings_required_callback($form, &$form_state) {
 }
 
 /**
-* 
-* 
-*/
+ * Validate handler for the field settings
+ */
 function multivalue_settings_validate_settings($form, &$form_state) {
-  dpm('in submit function for settings');
-  dpm($form_state['values']);
   // fix cardinality
   $settings = $form_state['values']['field']['settings']['multivalue_settings'];
   if ($settings['enable'] == 0) {
