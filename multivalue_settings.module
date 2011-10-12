@@ -112,7 +112,7 @@ function multivalue_settings_validate_element($element, &$form_state, $form) {
   $field = field_info_field($field_name);
   // filter out empty field items
   $values = $form_state['values'][$field_name]['und'];
-  if(isset($values['add_more'])) unset($values['add_more']);
+  if (isset($values['add_more'])) unset($values['add_more']);
   $filtered = _field_filter_items($field, $values);
   // get multivalue_settings settings
   $settings = $form_state['field'][$field_name][$langcode]['field']['settings']['multivalue_settings'];
