@@ -36,8 +36,10 @@ function multivalue_settings_form_field_ui_field_edit_form_alter(&$form, $form_s
   }
 
   // get default values
-  $values = $form['#field']['settings']['multivalue_settings'];
-
+  if (isset($form['#field']['settings']['multivalue_settings'])) {
+    $values = $form['#field']['settings']['multivalue_settings'];
+  }
+  else $values = multivalue_settings_defaults();
   // the fieldset
   $form['field']['settings']['multivalue_settings'] = array(
     '#type'   => 'fieldset',
@@ -152,4 +154,17 @@ function multivalue_settings_validate_settings($form, &$form_state) {
   }
   // set field required to FALSE
   $form_state['values']['instance']['required'] = FALSE;
+}
+
+/**
+ * Returns an array of default values to use for the admin form
+ */
+function multivalue_settings_defaults() {
+  return array(
+    'enable'   => 0,
+    'allowed'   => 2,
+    'required'  => 1,
+    'initial'   => 1,
+    'extra'     => 0,
+  );
 }
