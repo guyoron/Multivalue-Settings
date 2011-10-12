@@ -3,6 +3,7 @@ description = Adds some useful settings for Mmltiple value fields
 core = 7.x
 
 files[] = multivalue_settings.module
+files[] = multivalue_settings.admin.inc
 files[] = multivalue_settings.install
 
 
