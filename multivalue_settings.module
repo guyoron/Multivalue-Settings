@@ -11,28 +11,16 @@ require_once('multivalue_settings.admin.inc');
  * Implements field_attach_form().
  * 
  */
-function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
-  dpm('in field_attach_form');
-  //dpm('entity_type');
-  //dpm($entity_type);
-  dpm('entity');
-  dpm($entity);
-  dpm('form');
-  dpm($form);
-  dpm('form_state');
-  dpm($form_state);
+function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {  
+  // get the fields on this form, or return if there are none
+  if (isset($form_state['field'])) $fields = $form_state['field'];
+  else return;
   
   // chceck if we are in an ajax callback
   if (isset($form_state['triggering_element'])) {
     $ajax = TRUE;
   } else $ajax = FALSE;
-  
-  // get the fields on this form, or return if there are none
-  if (isset($form_state['field'])) $fields = $form_state['field'];
-  else return;
-  //dpm('fields:');
-  //dpm($fields);
-  
+    
   // iterate over the fields
   foreach ($fields as $field_name => $field) {
     // check whether they need to be altered by Multivalue Settings
@@ -42,33 +30,17 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
     }
     else $settings = $field[$langcode]['field']['settings']['multivalue_settings'];
     
-    
-    // field modifications
-    //dpm('settings:');
-    //dpm($settings);
     $allowed = $settings['allowed'];
     $required = $settings['required'];
     $initial = $settings['initial'];
     $extra = $settings['extra'];
 
-    // set it up accordingly
     $element = &$form[$field_name][$langcode];
     
     // add a validation function to this element
-    $form[$field_name][$langcode]['#element_validate'][] = 'multivalue_settings_test';
-    //$form_state['temporary']['multivalue_settings'][] = $field_name;
+    $form[$field_name][$langcode]['#element_validate'][] = 'multivalue_settings_validate_element';
     
-    dpm('element');
-    dpm($element);
-    /*
-    unset($element[0]);
-    unset($element[1]);
-    unset($element[2]);
-    dd($element);*/
-    
-    $element_num = $element['#max_delta'] + 1;
-    //dpm("element has $element_num fields");
-    
+    $element_num = $element['#max_delta'] + 1;    
     
     if (!$ajax) {
       // find the number of values the field already has
@@ -94,10 +66,7 @@ function multivalue_settings_field_attach_form($entity_type, $entity, &$form, &$
       }
       elseif ($allowed != -1 && $element_num > $allowed) {
         // we have to remove unallowed fields
-        dpm('hi');
         $remove = $element_num - $allowed;
-        dpm('remove');
-        dpm($remove);
         multivalue_settings_remove_items($element, $remove, $field_name, $langcode, $form_state);
       } 
       elseif ($extra_num != $extra) {
@@ -129,8 +98,7 @@ function multivalue_settings_mark_required($element) {
   return $element;
 }
 
-function multivalue_settings_test($element, &$form_state, $form) {
-  dpm($element);
+function multivalue_settings_validate_element($element, &$form_state, $form) {
   // get language and field name
   $langcode = $form_state['values']['language'];
   $field_name = $element['#field_name'];
